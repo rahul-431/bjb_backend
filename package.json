@@ -1,0 +1,28 @@
+{
+  "name": "youtubeclone",
+  "version": "1.0.0",
+  "description": "backend developement of youtube clone",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [
+    "javascript",
+    "node"
+  ],
+  "author": "Rahul Mijar",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.3",
+    "prettier": "^3.2.4"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "expresss": "^0.0.0",
+    "mongoose": "^8.1.1",
+    "multer": "^1.4.5-lts.1"
+  }
+}
