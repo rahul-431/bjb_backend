@@ -17,12 +17,12 @@ app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 
 // using external user routes
-app.use("api/v1/users", userRouter);
+app.use("/api/v1/users", userRouter);
 
 //using external room routes
-app.use("api/v1/rooms", roomRouter);
+app.use("/api/v1/rooms", roomRouter);
 
 //using external booking routs
-app.use("api/v1/bookings", bookingRouter);
+app.use("/api/v1/bookings", bookingRouter);
 
 export { app };

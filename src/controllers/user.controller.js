@@ -4,9 +4,10 @@ import { User } from "../models/user.model.js";
 import _ from "lodash";
 import { upload } from "../utils/fileUploadCloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-const registerUser = asyncHandler(async (req, res) => {
+export const registerUser = asyncHandler(async (req, res) => {
   //getting user details
   const { fullName, email, password } = req.body;
+  console.log(req.files);
 
   //empty validation check
   if ([fullName, email, password].some((item) => item?.trim() === "")) {
@@ -33,6 +34,7 @@ const registerUser = asyncHandler(async (req, res) => {
   if (avatarLocalPath) {
     avatar = await upload(avatarLocalPath);
   }
+  console.log(avatar, avatar?.url);
 
   //creating user and add entry in db
   const user = await User.create({
