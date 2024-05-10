@@ -24,4 +24,21 @@ const upload = async (localFilePath) => {
     return null;
   }
 };
-export { upload };
+const uploadMultipleFile = async (files) => {
+  try {
+    const uploadImages = [];
+    //uploading each image saparately
+    for (const file of files) {
+      const result = await cloudinary.uploader.upload(file.buffer, {
+        folder: "roomImages",
+        resource_type: "auto",
+      });
+      uploadImages.push(result.url);
+    }
+    return uploadImages;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+export { upload, uploadMultipleFile };
