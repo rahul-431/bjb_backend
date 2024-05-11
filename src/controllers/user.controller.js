@@ -5,7 +5,9 @@ import _ from "lodash";
 import { upload } from "../utils/fileUploadCloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
+import getRandomInt from "../utils/generateRandomNumber.js";
+import nodemailer from "nodemailer";
+import { app } from "../app.js";
 //registering the new user
 export const registerUser = asyncHandler(async (req, res) => {
   //getting user details
@@ -231,4 +233,90 @@ const logout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(null, "User Logged out successfully"));
 });
 
-export { login, deleteUser, getAllUsers, logout, updateUser, changePassword };
+//forget password:
+
+const handleForgetPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    throw new ApiError(400, "Email is required to reset password");
+  }
+
+  //check if the email exist or not?
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(404, "Provided email not found");
+  }
+  // resetUserId = user._id;
+  app.set("resetUserId", user._id);
+  const min = 1000;
+  const max = 2000;
+  const randomInt = getRandomInt(min, max);
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    host: "smtp.gmail.com",
+    auth: {
+      user: "porterharry1050@gmail.com",
+      //this password is a app passoword that get from google to give this app all accessibility
+      //to get this first enable two factor auth and then create new app password
+      //dont add actual gmail password, this will not work
+      pass: "kxrk dilt akue qjkv",
+    },
+  });
+  try {
+    const mailOptions = {
+      from: "porterharry1050@gmail.com",
+      to: email,
+      subject: "Resetting password",
+      text: `Enter this code to reset your password ${randomInt}`, // Plain text body
+    };
+    // Send email
+    await transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error);
+      } else {
+        app.set("otp", randomInt);
+        return res
+          .status(200)
+          .json(new ApiResponse(info, "Email sent successfully"));
+      }
+    });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw new ApiError(500, "Error while sending email");
+  }
+});
+
+//finally resetting password with otp and new password
+const resetPassword = asyncHandler(async (req, res) => {
+  const { code, password } = req.body;
+  const userId = req.app.get("resetUserId");
+  const otp = req.app.get("otp");
+  console.log("from Local", otp, userId);
+  console.log("from client", code, password);
+  // console.log(isInteger(code), isInteger(otp));
+  if (!code || !password) {
+    throw new ApiError(400, "credentials not found");
+  }
+  if (otp === code) {
+    throw new ApiError(400, "otp is incorrect");
+  }
+
+  const user = await User.findById(userId);
+  user.password = password;
+  await user.save({ validateBeforeSave: true });
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(null, "Password reset successfully, Login required!!!")
+    );
+});
+export {
+  login,
+  deleteUser,
+  getAllUsers,
+  logout,
+  updateUser,
+  changePassword,
+  handleForgetPassword,
+  resetPassword,
+};

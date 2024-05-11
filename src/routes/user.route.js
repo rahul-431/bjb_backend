@@ -4,9 +4,11 @@ import {
   changePassword,
   deleteUser,
   getAllUsers,
+  handleForgetPassword,
   login,
   logout,
   registerUser,
+  resetPassword,
   updateUser,
 } from "../controllers/user.controller.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
@@ -42,4 +44,10 @@ userRouter.route("/logout").post(verifyJwt, logout);
 
 //change password
 userRouter.route("/changePassword").post(verifyJwt, changePassword);
+
+//handling forget password
+userRouter.route("/forgetPassword").post(handleForgetPassword);
+
+//reset password
+userRouter.route("/reset").post(resetPassword);
 export default userRouter;
