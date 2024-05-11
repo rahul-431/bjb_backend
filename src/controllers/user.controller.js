@@ -5,7 +5,7 @@ import _ from "lodash";
 import { upload } from "../utils/fileUploadCloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
-
+import bcrypt from "bcryptjs";
 //registering the new user
 export const registerUser = asyncHandler(async (req, res) => {
   //getting user details
@@ -118,6 +118,31 @@ const updateUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(updatedUser, "Updated successfully"));
 });
 
+//handling change password
+const changePassword = asyncHandler(async (req, res) => {
+  //getting data
+  const { currentPassword, newPassword } = req.body;
+
+  //empty validation
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, "All Fields are required");
+  }
+  //check current password is match or not?
+  const user = await User.findById(req.user?._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(currentPassword);
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Incorrect current password");
+  }
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: true });
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(null, "Password changed successfully, Login required!!!")
+    );
+});
+
 //generate both access and refresh token and saving refresh token to the database
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -156,7 +181,7 @@ const login = asyncHandler(async (req, res) => {
   //checking the password
   const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) {
-    throw new ApiError(401, "Password is incorrect, please try again");
+    throw new ApiError(400, "Password is incorrect, please try again");
   }
 
   //generating access and refresh token
@@ -206,4 +231,4 @@ const logout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(null, "User Logged out successfully"));
 });
 
-export { login, deleteUser, getAllUsers, logout, updateUser };
+export { login, deleteUser, getAllUsers, logout, updateUser, changePassword };

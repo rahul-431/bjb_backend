@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { uploadLocally } from "../middlewares/fileUpload.middleware.js";
 import {
+  changePassword,
   deleteUser,
   getAllUsers,
   login,
@@ -38,4 +39,7 @@ userRouter.route("/").put(verifyJwt, updateUser);
 
 //logout user
 userRouter.route("/logout").post(verifyJwt, logout);
+
+//change password
+userRouter.route("/changePassword").post(verifyJwt, changePassword);
 export default userRouter;
