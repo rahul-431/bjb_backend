@@ -4,8 +4,10 @@ import {
   deleteUser,
   getAllUsers,
   login,
+  logout,
   registerUser,
 } from "../controllers/user.controller.js";
+import { verifyJwt } from "../middlewares/auth.middleware.js";
 const userRouter = Router();
 
 //add new user
@@ -27,4 +29,7 @@ userRouter.route("/").get(getAllUsers);
 
 //delete user
 userRouter.route("/:id").delete(deleteUser);
+
+//logout user
+userRouter.route("/logout").post(verifyJwt, logout);
 export default userRouter;

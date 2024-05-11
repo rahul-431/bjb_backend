@@ -138,7 +138,7 @@ const login = asyncHandler(async (req, res) => {
     user._id
   );
 
-  const loggedInUser = await User.findById(existed._id).select(
+  const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
 
@@ -156,5 +156,26 @@ const login = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, options)
     .json(new ApiResponse(loggedInUser, "Logged in successfully"));
 });
+const logout = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: { refreshToken: undefined },
+    },
+    /*This new option tells Mongoose to return the 
+    updated document after the update operation is completed.
+     Without this option, Mongoose would return the document as it was before the update. */
+    { new: true }
+  );
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(null, "User Logged out successfully"));
+});
 
-export { login, deleteUser, getAllUsers };
+export { login, deleteUser, getAllUsers, logout };
