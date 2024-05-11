@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import _ from "lodash";
 import { upload } from "../utils/fileUploadCloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import mongoose from "mongoose";
 
 //registering the new user
 export const registerUser = asyncHandler(async (req, res) => {
@@ -58,6 +59,34 @@ export const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(createdUser, "New user registerd successfully"));
 });
 
+//get list of all users
+const getAllUsers = asyncHandler(async (req, res) => {
+  const users = await User.find();
+  if (!users) {
+    throw new ApiError(404, "No users found");
+  }
+  if (users.length > 0) {
+    return res
+      .status(200)
+      .json(new ApiResponse(users, "All users retrived successfully"));
+  }
+  return res.status(200).json(new ApiResponse(users, "No users found"));
+});
+
+//deleting the user
+const deleteUser = asyncHandler(async (req, res) => {
+  const deleteId = req.params.id;
+  if (!deleteId) {
+    throw new ApiError(400, "No id provided");
+  }
+  const deleteObjectId = new mongoose.Types.ObjectId(deleteId);
+  const deletedUser = await User.findByIdAndDelete(deleteObjectId);
+  if (!deletedUser) {
+    throw new ApiError(400, "use not found");
+  }
+  return res.status(204).json("User deleted successfully");
+});
+
 //generate both access and refresh token and saving refresh token to the database
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -73,6 +102,8 @@ const generateAccessAndRefreshToken = async (userId) => {
     throw new ApiError(500, "something went wrong while creating jwt tokens");
   }
 };
+
+//login user
 const login = asyncHandler(async (req, res) => {
   //getting data from frontend
   const { email, password } = req.body;
@@ -121,4 +152,4 @@ const login = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, options)
     .json(new ApiResponse(loggenInUser, "Logged in successfully"));
 });
-export { login };
+export { login, deleteUser, getAllUsers };
