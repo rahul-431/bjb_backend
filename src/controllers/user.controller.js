@@ -156,4 +156,5 @@ const login = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, options)
     .json(new ApiResponse(loggedInUser, "Logged in successfully"));
 });
+
 export { login, deleteUser, getAllUsers };
