@@ -128,11 +128,7 @@ const updateRoomDetails = asyncHandler(async (req, res) => {
   if (!req.params.id) {
     throw new ApiError(400, "No id provided to update");
   }
-  if (
-    [roomNumber, roomType, capacity, facilities].some(
-      (item) => item.trim() === ""
-    )
-  ) {
+  if ([roomNumber, roomType, capacity].some((item) => item.trim() === "")) {
     throw new ApiError(400, "All Fields are required");
   }
   const roomId = new mongoose.Types.ObjectId(req.params.id);
