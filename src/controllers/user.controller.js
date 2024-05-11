@@ -66,7 +66,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
 //get list of all users
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find();
+  const users = await User.find().select("-password -refreshToken");
   if (!users) {
     throw new ApiError(404, "No users found");
   }
@@ -90,6 +90,32 @@ const deleteUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "use not found");
   }
   return res.status(204).json("User deleted successfully");
+});
+
+//updating the user details email and fullName
+const updateUser = asyncHandler(async (req, res) => {
+  const { email, fullName } = req.body;
+  if (!email || !fullName) {
+    throw new ApiError(400, "FullName and email is required");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        fullName: fullName,
+        email: email,
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  if (!updatedUser) {
+    throw new ApiError(400, "Failed to update the user");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(updatedUser, "Updated successfully"));
 });
 
 //generate both access and refresh token and saving refresh token to the database
@@ -156,11 +182,13 @@ const login = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, options)
     .json(new ApiResponse(loggedInUser, "Logged in successfully"));
 });
+
+//logout user
 const logout = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: { refreshToken: undefined },
+      $set: { refreshToken: "" },
     },
     /*This new option tells Mongoose to return the 
     updated document after the update operation is completed.
@@ -178,4 +206,4 @@ const logout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(null, "User Logged out successfully"));
 });
 
-export { login, deleteUser, getAllUsers, logout };
+export { login, deleteUser, getAllUsers, logout, updateUser };

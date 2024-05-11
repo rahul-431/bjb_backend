@@ -6,6 +6,7 @@ import {
   login,
   logout,
   registerUser,
+  updateUser,
 } from "../controllers/user.controller.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 const userRouter = Router();
@@ -24,11 +25,16 @@ userRouter.route("/").post(
 //login user
 userRouter.route("/login").post(login);
 
+//secured routes
+
 //get list of all users
-userRouter.route("/").get(getAllUsers);
+userRouter.route("/").get(verifyJwt, getAllUsers);
 
 //delete user
-userRouter.route("/:id").delete(deleteUser);
+userRouter.route("/:id").delete(verifyJwt, deleteUser);
+
+//update user data fullName and email
+userRouter.route("/").put(verifyJwt, updateUser);
 
 //logout user
 userRouter.route("/logout").post(verifyJwt, logout);
