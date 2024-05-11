@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { uploadLocally } from "../middlewares/fileUpload.middleware.js";
-import { registerUser } from "../controllers/user.controller.js";
+import { login, registerUser } from "../controllers/user.controller.js";
 const userRouter = Router();
 userRouter.route("/").post(
   uploadLocally.fields([
@@ -11,4 +11,5 @@ userRouter.route("/").post(
   ]),
   registerUser
 );
+userRouter.route("/login").post(login);
 export default userRouter;
