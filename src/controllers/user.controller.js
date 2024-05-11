@@ -10,6 +10,7 @@ import mongoose from "mongoose";
 export const registerUser = asyncHandler(async (req, res) => {
   //getting user details
   const { fullName, email, password } = req.body;
+  console.log(fullName, email, password);
   console.log(req.files);
 
   //empty validation check
@@ -27,8 +28,12 @@ export const registerUser = asyncHandler(async (req, res) => {
   }
 
   //checking for avatar
-  let avatarLocalPath;
-  if (req.files && _.isArray(req.files.avatar) && req.files.avatar.length > 0) {
+  let avatarLocalPath = "";
+  if (
+    req.files &&
+    _.isArray(req.files?.avatar) &&
+    req.files?.avatar?.length > 0
+  ) {
     avatarLocalPath = req.files.avatar[0].path;
   }
 
@@ -37,7 +42,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   if (avatarLocalPath) {
     avatar = await upload(avatarLocalPath);
   }
-  console.log(avatar, avatar?.url);
+  // console.log(avatar, avatar?.url);
 
   //creating user and add entry in db
   const user = await User.create({
@@ -91,10 +96,10 @@ const deleteUser = asyncHandler(async (req, res) => {
 const generateAccessAndRefreshToken = async (userId) => {
   try {
     const user = await User.findById(userId);
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
     user.refreshToken = refreshToken;
-
+    // console.log(accessToken, refreshToken);
     //save refresh token to database
     await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
@@ -109,13 +114,13 @@ const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   //empty validation
-  if ([email, password].some((item) => item.trim() === "")) {
+  if (!email || !password) {
     throw new ApiError(400, "All fields are required");
   }
 
   //check if email exist or not
-  const existed = await User.findOne({ email });
-  if (!existed) {
+  const user = await User.findOne({ email });
+  if (!user) {
     throw new ApiError(
       400,
       `User with ${email} does not exist, please register first`
@@ -123,20 +128,19 @@ const login = asyncHandler(async (req, res) => {
   }
 
   //checking the password
-  const isPasswordValid = await User.isPasswordCorrect(password);
+  const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) {
     throw new ApiError(401, "Password is incorrect, please try again");
   }
 
   //generating access and refresh token
-  const { accessToken, refreshToken } = generateAccessAndRefreshToken(
-    existed._id
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
   );
 
-  // const loggedInUser = await User.findById(existed._id).select(
-  //   "-password -refreshToken"
-  // );
-  const loggenInUser = await User.findById(existed._id);
+  const loggedInUser = await User.findById(existed._id).select(
+    "-password -refreshToken"
+  );
 
   //sending access token in cookie
   //after adding this option true then cookie can not be modified by the client side
@@ -150,6 +154,6 @@ const login = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(loggenInUser, "Logged in successfully"));
+    .json(new ApiResponse(loggedInUser, "Logged in successfully"));
 });
 export { login, deleteUser, getAllUsers };
