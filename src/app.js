@@ -4,6 +4,7 @@ import cors from "cors";
 import userRouter from "./routes/user.route.js";
 import roomRouter from "./routes/room.route.js";
 import bookingRouter from "./routes/booking.route.js";
+import guestRouter from "./routes/guest.route.js";
 const app = express();
 app.use(
   cors({
@@ -24,5 +25,8 @@ app.use("/api/v1/rooms", roomRouter);
 
 //using external booking routs
 app.use("/api/v1/bookings", bookingRouter);
+
+//using external guest routes
+app.use("/api/v1/guests", guestRouter);
 
 export { app };

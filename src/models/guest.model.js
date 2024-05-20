@@ -2,12 +2,11 @@ import { Schema } from "mongoose";
 
 const guestSchema = new Schema(
   {
-    fullName: [
-      {
-        type: String,
-        required: true,
-      },
-    ],
+    fullName: {
+      type: String,
+      required: true,
+    },
+
     address: {
       type: String,
       required: true,
