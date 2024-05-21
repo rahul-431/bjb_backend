@@ -9,7 +9,7 @@ const bookingSchema = new Schema(
       type: String,
       required: true,
     },
-    vechicleNumber: [
+    vehicleNumber: [
       {
         type: String,
       },
@@ -20,9 +20,11 @@ const bookingSchema = new Schema(
     roomNumber: {
       type: Schema.Types.ObjectId,
       ref: "Room",
+      required: true,
     },
     guestId: {
       type: Schema.Types.ObjectId,
+      ref: "Guest",
       required: true,
     },
     maleNumber: Number,
@@ -41,9 +43,6 @@ const bookingSchema = new Schema(
     roomCharge: {
       type: Number,
       required: true,
-    },
-    discount: {
-      type: Number,
     },
     addedBy: {
       type: Schema.Types.ObjectId,

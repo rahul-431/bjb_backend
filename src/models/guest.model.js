@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const guestSchema = new Schema(
   {
@@ -11,7 +11,7 @@ const guestSchema = new Schema(
       type: String,
       required: true,
     },
-    age: number,
+    age: Number,
     identityType: {
       type: String,
       enum: [
