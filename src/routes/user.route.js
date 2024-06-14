@@ -34,7 +34,7 @@ userRouter.route("/login").post(login);
 userRouter.route("/").get(getAllUsers);
 
 //delete user
-userRouter.route("/:id").delete(verifyJwt, deleteUser);
+userRouter.route("/:id").delete(deleteUser);
 
 //update user data fullName and email
 userRouter.route("/").put(verifyJwt, updateUser);

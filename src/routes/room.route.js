@@ -10,6 +10,7 @@ import {
   updateRoomDetails,
 } from "../controllers/room.controller.js";
 import multer from "multer";
+import { uploadLocally } from "../middlewares/fileUpload.middleware.js";
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 const roomRouter = Router();
@@ -24,7 +25,16 @@ roomRouter.route("/type/:id").delete(deleteRoomType);
 roomRouter.route("/type").get(getAllRoomType);
 
 //add new room
-roomRouter.route("/").post(upload.array("images", 5), addRoom);
+// roomRouter.route("/").post(upload.array("images", 5), addRoom);
+roomRouter.route("/").post(
+  uploadLocally.fields([
+    {
+      name: "roomImage",
+      maxCount: 1,
+    },
+  ]),
+  addRoom
+);
 
 //getAllRoom
 roomRouter.route("/").get(getAllRoom);

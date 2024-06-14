@@ -15,24 +15,24 @@ const guestSchema = new Schema(
     identityType: {
       type: String,
       enum: [
-        "Citizenship",
-        "Driving Liscence",
-        "Pan Card",
-        "Aadhar Card",
-        "Other",
+        "citizenship",
+        "driving-liscence",
+        "pan-card",
+        "aadhar-card",
+        "other",
       ],
     },
     identityTypeNumber: {
       type: String,
     },
     phoneNumber: {
-      type: Number,
+      type: String,
       required: true,
     },
     nationality: {
       type: String,
-      enum: ["Nepali", "Indian", "Other"],
-      default: "Nepali",
+      enum: ["nepali", "indian", "other"],
+      default: "nepali",
     },
     occupation: {
       type: String,

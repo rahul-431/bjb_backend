@@ -3,6 +3,7 @@ import { Guest } from "../models/guest.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import _ from "lodash";
 
 //add new guest
 const addGuest = asyncHandler(async (req, res) => {
@@ -57,18 +58,57 @@ const addGuest = asyncHandler(async (req, res) => {
     .json(new ApiResponse(createdGuest, "New guest added successfully"));
 });
 
-//get list of all guest
+// get list of all guest
 const getAllGuest = asyncHandler(async (req, res) => {
-  const guests = await Guest.find();
-  if (!guests) {
-    throw new ApiError(404, "No guests found");
+  // Default page is 1, default limit is 10
+  const limit = 10;
+  const { page = 1, filter, search = "" } = req.query;
+  const skip = (page - 1) * limit;
+  let list;
+  let count;
+  if (filter === "all") {
+    list = await Guest.find({
+      $or: [
+        { fullName: { $regex: search, $options: "i" } },
+        { address: { $regex: search, $options: "i" } },
+      ],
+    })
+      .skip(skip)
+      .limit(limit);
+    count = await Guest.countDocuments();
+  } else {
+    list = await Guest.aggregate([
+      {
+        $match: { nationality: filter },
+      },
+      {
+        $match: {
+          $or: [
+            { fullName: { $regex: search, $options: "i" } },
+            { address: { $regex: search, $options: "i" } },
+          ],
+        },
+      },
+      {
+        $skip: skip,
+      },
+      {
+        $limit: limit,
+      },
+    ]);
+
+    count = await Guest.countDocuments({ nationality: filter });
   }
-  if (guests.length > 0) {
-    return res
-      .status(200)
-      .json(new ApiResponse(guests, "All guests retrived successfully"));
+  if (!list) {
+    throw new ApiError(500, "Failed to fetch the list of guest");
   }
-  return res.status(200).json(new ApiResponse(guests, "No guests found"));
+  const guests = {
+    list,
+    count,
+  };
+  return res
+    .status(200)
+    .json(new ApiResponse(guests, "All guests retrived successfully"));
 });
 
 //get single guest based on id

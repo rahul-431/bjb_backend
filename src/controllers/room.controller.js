@@ -5,7 +5,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 import { Room } from "../models/room.model.js";
-import { uploadMultipleFile } from "../utils/fileUploadCloudinary.js";
+import { upload, uploadMultipleFile } from "../utils/fileUploadCloudinary.js";
+import _ from "lodash";
 //add new room type
 const addRoomType = asyncHandler(async (req, res) => {
   const { name } = req.body;
@@ -53,6 +54,7 @@ const getAllRoomType = asyncHandler(async (req, res) => {
 
 //add new room
 const addRoom = asyncHandler(async (req, res) => {
+  console.log(req);
   //get all information
   const { roomNumber, roomType, capacity, facilities } = req.body;
 
@@ -64,24 +66,39 @@ const addRoom = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  //uploading room images, that number of images can varry between 1-5
-  const files = req.files;
-  console.log(req.files);
-  const uploadImages = await uploadMultipleFile(files);
-
-  //check if images uploaded successfully or not?
-  if (uploadImages?.length === 0) {
-    throw new ApiError(500, "Failed to upload images");
+  //checking for roomImage
+  let roomImageLocalPath = "";
+  if (
+    req.files &&
+    _.isArray(req.files?.roomImage) &&
+    req.files?.roomImage?.length > 0
+  ) {
+    roomImageLocalPath = req.files.roomImage[0].path;
   }
 
+  //uploading image at cloudinary
+  let roomImg;
+  if (roomImageLocalPath) {
+    roomImg = await upload(roomImageLocalPath);
+  }
+  // //uploading room images, that number of images can varry between 1-5
+  // const files = req.files;
+  // console.log(req.files);
+  // const uploadImages = await uploadMultipleFile(files);
+
+  // //check if images uploaded successfully or not?
+  // if (uploadImages?.length === 0) {
+  //   throw new ApiError(500, "Failed to upload images");
+  // }
+
   //just for now admin id add manually
-  const adminId = new mongoose.Types.ObjectId("663def795dbaf48955bcc5be");
+  const adminId = new mongoose.Types.ObjectId("663f6aea6f2813ddaca08669");
   const roomTypeId = new mongoose.Types.ObjectId(roomType);
   //room object
   const room = await Room.create({
     roomNumber,
     roomType: roomTypeId,
-    roomImage: uploadImages,
+    roomImage: roomImg?.url || "",
     capacity,
     facilities,
     addedBy: adminId,
@@ -97,8 +114,47 @@ const addRoom = asyncHandler(async (req, res) => {
 });
 
 //get all room
+
 const getAllRoom = asyncHandler(async (req, res) => {
-  const allRooms = await Room.find();
+  const allRooms = await Room.aggregate([
+    {
+      $lookup: {
+        from: "users",
+        localField: "addedBy",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    {
+      $lookup: {
+        from: "roomtypes",
+        localField: "roomType",
+        foreignField: "_id",
+        as: "roomTypeName",
+      },
+    },
+    {
+      $addFields: {
+        userName: {
+          $first: "$user",
+        },
+        roomTypeName: {
+          $first: "$roomTypeName",
+        },
+      },
+    },
+    {
+      $project: {
+        roomNumber: 1,
+        "roomTypeName.name": 1,
+        "userName.fullName": 1,
+        cleanStatus: 1,
+        roomStatus: 1,
+        capacity: 1,
+        facilities: 1,
+      },
+    },
+  ]);
   if (!allRooms) {
     throw new ApiError(404, "NO resource found");
   }

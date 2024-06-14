@@ -10,6 +10,7 @@ import nodemailer from "nodemailer";
 import { app } from "../app.js";
 //registering the new user
 export const registerUser = asyncHandler(async (req, res) => {
+  console.log("url just hit");
   //getting user details
   const { fullName, email, password } = req.body;
   console.log(fullName, email, password);
@@ -73,9 +74,8 @@ const getAllUsers = asyncHandler(async (req, res) => {
     throw new ApiError(404, "No users found");
   }
   if (users.length > 0) {
-    return res
-      .status(200)
-      .json(new ApiResponse(users, "All users retrived successfully"));
+    return res.status(200).json(users);
+    // .json(new ApiResponse(users, "All users retrived successfully"));
   }
   return res.status(200).json(new ApiResponse(users, "No users found"));
 });

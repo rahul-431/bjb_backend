@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
+//add new booking
 const addBooking = asyncHandler(async (req, res) => {
   const {
     checkInDate,
@@ -66,6 +67,8 @@ const addBooking = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(newBooking, "New booking added successfully"));
 });
+
+//getting list of all bookings
 const getAllBooking = asyncHandler(async (req, res) => {
   const bookings = await Booking.find();
   if (bookings.length > 0) {
@@ -75,6 +78,8 @@ const getAllBooking = asyncHandler(async (req, res) => {
   }
   return res.status(200).json(new ApiResponse("No bookings found"));
 });
+
+//deleting a single booking
 const deleteBooking = asyncHandler(async (req, res) => {
   if (!req.params.id) {
     throw new ApiError(400, "Id is not provided");
@@ -88,6 +93,8 @@ const deleteBooking = asyncHandler(async (req, res) => {
     .status(204)
     .json(new ApiResponse(null, "Booking deleted successfully"));
 });
+
+//getting single booking details
 const getSingleBooking = asyncHandler(async (req, res) => {
   if (!req.params.id) {
     throw new ApiError(400, "Id is not provided");
