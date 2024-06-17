@@ -10,6 +10,7 @@ const addGuest = asyncHandler(async (req, res) => {
   //getting information from frontend
   const {
     fullName,
+    email,
     address,
     age,
     nationality,
@@ -29,14 +30,22 @@ const addGuest = asyncHandler(async (req, res) => {
   }
 
   //checking if the current phone number already exist or not
+  const adminId = new mongoose.Types.ObjectId("663f6aea6f2813ddaca08669");
   const existedGuest = await Guest.findOne({ phoneNumber });
   if (existedGuest) {
     throw new ApiError(400, "guest with this phone number already exist");
+  }
+  if (email) {
+    const existedUser = await Guest.findOne({ email });
+    if (existedUser) {
+      throw new ApiError(400, `Guest with ${email} already exist`);
+    }
   }
 
   //creating user and add entry in db
   const guest = await Guest.create({
     fullName,
+    email,
     address,
     age,
     identityType,
@@ -44,6 +53,7 @@ const addGuest = asyncHandler(async (req, res) => {
     nationality,
     phoneNumber,
     occupation,
+    addedBy: adminId,
   });
 
   //check if user created or not
@@ -67,19 +77,90 @@ const getAllGuest = asyncHandler(async (req, res) => {
   let list;
   let count;
   if (filter === "all") {
-    list = await Guest.find({
-      $or: [
-        { fullName: { $regex: search, $options: "i" } },
-        { address: { $regex: search, $options: "i" } },
-      ],
-    })
-      .skip(skip)
-      .limit(limit);
+    list = await Guest.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "addedBy",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $addFields: {
+          user: {
+            $first: "$user",
+          },
+        },
+      },
+      {
+        $project: {
+          fullName: 1,
+          email: 1,
+          address: 1,
+          phoneNumber: 1,
+          nationality: 1,
+          age: 1,
+          occupation: 1,
+          identityType: 1,
+          identityTypeNumber: 1,
+          "user.fullName": 1,
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { fullName: { $regex: search, $options: "i" } },
+            { address: { $regex: search, $options: "i" } },
+          ],
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      {
+        $skip: skip,
+      },
+      {
+        $limit: limit,
+      },
+    ]);
     count = await Guest.countDocuments();
   } else {
     list = await Guest.aggregate([
       {
         $match: { nationality: filter },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "addedBy",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $addFields: {
+          user: {
+            $first: "$user",
+          },
+        },
+      },
+      {
+        $project: {
+          fullName: 1,
+          email: 1,
+          address: 1,
+          phoneNumber: 1,
+          nationality: 1,
+          age: 1,
+          occupation: 1,
+          identityType: 1,
+          identityTypeNumber: 1,
+          "user.fullName": 1,
+        },
       },
       {
         $match: {
@@ -117,11 +198,50 @@ const getSingleGuest = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Id is not provided");
   }
   const guestId = new mongoose.Types.ObjectId(req.params.id);
-  const guest = await Guest.findById(guestId);
+  const guest = await Guest.aggregate([
+    {
+      $match: {
+        _id: guestId,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "addedBy",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    {
+      $addFields: {
+        user: {
+          $first: "$user",
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        email: 1,
+        address: 1,
+        phoneNumber: 1,
+        nationality: 1,
+        age: 1,
+        occupation: 1,
+        identityType: 1,
+        identityTypeNumber: 1,
+        "user.fullName": 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    },
+  ]);
   if (!guest) {
     throw new ApiError(404, "Guest with given id not found");
   }
-  return res.status(200).json(new ApiResponse(guest, "Retrieved successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(guest[0], "Retrieved successfully"));
 });
 
 //deleting the guest
@@ -137,4 +257,52 @@ const deleteGuest = asyncHandler(async (req, res) => {
   }
   return res.status(204).json("Guest deleted successfully");
 });
-export { addGuest, getAllGuest, getSingleGuest, deleteGuest };
+
+//update guest details
+const updateGuestDetails = asyncHandler(async (req, res) => {
+  const {
+    fullName,
+    email,
+    address,
+    phoneNumber,
+    nationality,
+    identityType,
+    identityTypeNumber,
+    age,
+    occupation,
+  } = req.body;
+  if (!req.params.id) {
+    throw new ApiError(400, "No id provided to update");
+  }
+  if (
+    [fullName, address, phoneNumber, nationality].some(
+      (item) => item.trim() === ""
+    )
+  ) {
+    throw new ApiError(400, "All Fields are required");
+  }
+  const guestId = new mongoose.Types.ObjectId(req.params.id);
+  const updatedGuest = await Guest.findByIdAndUpdate(guestId, {
+    $set: {
+      fullName,
+      email,
+      address,
+      phoneNumber,
+      nationality,
+      age,
+      identityTypeNumber,
+      identityType,
+      occupation,
+    },
+  });
+  return res
+    .status(200)
+    .json(new ApiResponse(updatedGuest, "Guest details updated successfully"));
+});
+export {
+  addGuest,
+  getAllGuest,
+  getSingleGuest,
+  deleteGuest,
+  updateGuestDetails,
+};

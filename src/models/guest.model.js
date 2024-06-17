@@ -6,7 +6,7 @@ const guestSchema = new Schema(
       type: String,
       required: true,
     },
-
+    email: String,
     address: {
       type: String,
       required: true,
@@ -36,6 +36,10 @@ const guestSchema = new Schema(
     },
     occupation: {
       type: String,
+    },
+    addedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   { timestamps: true }

@@ -4,6 +4,7 @@ import {
   deleteGuest,
   getAllGuest,
   getSingleGuest,
+  updateGuestDetails,
 } from "../controllers/guest.controller.js";
 
 const guestRouter = Router();
@@ -19,4 +20,7 @@ guestRouter.route("/:id").get(getSingleGuest);
 
 //delete guest
 guestRouter.route("/:id").delete(deleteGuest);
+
+//edit guest
+guestRouter.route("/:id").put(updateGuestDetails);
 export default guestRouter;
