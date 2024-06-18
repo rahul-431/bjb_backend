@@ -74,112 +74,71 @@ const getAllGuest = asyncHandler(async (req, res) => {
   const limit = 10;
   const { page = 1, filter, search = "" } = req.query;
   const skip = (page - 1) * limit;
-  let list;
-  let count;
-  if (filter === "all") {
-    list = await Guest.aggregate([
-      {
-        $lookup: {
-          from: "users",
-          localField: "addedBy",
-          foreignField: "_id",
-          as: "user",
-        },
-      },
-      {
-        $addFields: {
-          user: {
-            $first: "$user",
-          },
-        },
-      },
-      {
-        $project: {
-          fullName: 1,
-          email: 1,
-          address: 1,
-          phoneNumber: 1,
-          nationality: 1,
-          age: 1,
-          occupation: 1,
-          identityType: 1,
-          identityTypeNumber: 1,
-          "user.fullName": 1,
-        },
-      },
-      {
-        $match: {
-          $or: [
-            { fullName: { $regex: search, $options: "i" } },
-            { address: { $regex: search, $options: "i" } },
-          ],
-        },
-      },
-      {
-        $sort: {
-          createdAt: -1,
-        },
-      },
-      {
-        $skip: skip,
-      },
-      {
-        $limit: limit,
-      },
-    ]);
-    count = await Guest.countDocuments();
-  } else {
-    list = await Guest.aggregate([
-      {
-        $match: { nationality: filter },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "addedBy",
-          foreignField: "_id",
-          as: "user",
-        },
-      },
-      {
-        $addFields: {
-          user: {
-            $first: "$user",
-          },
-        },
-      },
-      {
-        $project: {
-          fullName: 1,
-          email: 1,
-          address: 1,
-          phoneNumber: 1,
-          nationality: 1,
-          age: 1,
-          occupation: 1,
-          identityType: 1,
-          identityTypeNumber: 1,
-          "user.fullName": 1,
-        },
-      },
-      {
-        $match: {
-          $or: [
-            { fullName: { $regex: search, $options: "i" } },
-            { address: { $regex: search, $options: "i" } },
-          ],
-        },
-      },
-      {
-        $skip: skip,
-      },
-      {
-        $limit: limit,
-      },
-    ]);
 
-    count = await Guest.countDocuments({ nationality: filter });
+  // Construct the filter object
+  let query = {};
+
+  if (filter !== "all") {
+    query.nationality = filter;
   }
+
+  if (search !== "") {
+    query.$or = [
+      { fullName: { $regex: search, $options: "i" } },
+      { address: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  // Count the total documents matching the query
+  const count = await Guest.countDocuments(query);
+  let pipeline = [
+    {
+      $match: query,
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "addedBy",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    {
+      $addFields: {
+        user: {
+          $first: "$user",
+        },
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        email: 1,
+        address: 1,
+        phoneNumber: 1,
+        nationality: 1,
+        age: 1,
+        occupation: 1,
+        identityType: 1,
+        identityTypeNumber: 1,
+        "user.fullName": 1,
+      },
+    },
+
+    {
+      $skip: skip,
+    },
+    {
+      $limit: limit,
+    },
+  ];
+  // count = await Guest.countDocuments();
+  const list = await Guest.aggregate(pipeline);
   if (!list) {
     throw new ApiError(500, "Failed to fetch the list of guest");
   }
@@ -299,10 +258,33 @@ const updateGuestDetails = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(updatedGuest, "Guest details updated successfully"));
 });
+const searchGuest = asyncHandler(async (req, res) => {
+  const query = req.params.q;
+  const guest = await Guest.aggregate([
+    {
+      $match: {
+        $or: [{ fullName: { $regex: query, $options: "i" } }],
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        email: 1,
+        address: 1,
+        phoneNumber: 1,
+      },
+    },
+  ]);
+  if (!guest) {
+    throw new ApiError(404, "Guest with given id not found");
+  }
+  return res.status(200).json(new ApiResponse(guest, "Retrieved successfully"));
+});
 export {
   addGuest,
   getAllGuest,
   getSingleGuest,
   deleteGuest,
   updateGuestDetails,
+  searchGuest,
 };

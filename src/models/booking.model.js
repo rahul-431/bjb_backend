@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+
 const bookingSchema = new Schema(
   {
     checkInDate: {
@@ -14,9 +15,6 @@ const bookingSchema = new Schema(
         type: String,
       },
     ],
-    purpose: {
-      tyep: String,
-    },
     roomNumber: {
       type: Schema.Types.ObjectId,
       ref: "Room",
@@ -27,23 +25,26 @@ const bookingSchema = new Schema(
       ref: "Guest",
       required: true,
     },
-    maleNumber: Number,
-    femaleNumber: Number,
-    relation: String,
+    maleNumber: { type: Number, default: 0 },
+    femaleNumber: { type: Number, default: 0 },
     totalGuest: Number,
-
-    isCheckout: {
-      type: Boolean,
-      default: false,
-    },
-    paidStatus: {
+    relation: String,
+    status: {
       type: String,
-      enum: ["Paid", "Due"],
+      enum: ["unconfirmed", "checked-in", "checked-out"],
+      default: "checked-in",
     },
     roomCharge: {
       type: Number,
       required: true,
     },
+    extraCharge: { type: Number, default: 0 },
+    otherCharge: { type: Number, default: 0 },
+    isPaid: {
+      type: Boolean,
+    },
+    otherPaid: { type: Boolean, default: true },
+    observation: String,
     addedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",

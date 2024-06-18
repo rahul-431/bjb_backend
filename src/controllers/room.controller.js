@@ -116,7 +116,17 @@ const addRoom = asyncHandler(async (req, res) => {
 //get all room
 
 const getAllRoom = asyncHandler(async (req, res) => {
-  const allRooms = await Room.aggregate([
+  const { isBooking } = req.params;
+  let pipeline = [];
+  if (isBooking === "true") {
+    console.log("booking status checking");
+    pipeline.push({
+      $match: {
+        roomStatus: "Not Booked",
+      },
+    });
+  }
+  pipeline = pipeline.concat([
     {
       $lookup: {
         from: "users",
@@ -155,6 +165,7 @@ const getAllRoom = asyncHandler(async (req, res) => {
       },
     },
   ]);
+  const allRooms = await Room.aggregate(pipeline);
   if (!allRooms) {
     throw new ApiError(404, "NO resource found");
   }

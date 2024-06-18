@@ -4,6 +4,7 @@ import {
   deleteGuest,
   getAllGuest,
   getSingleGuest,
+  searchGuest,
   updateGuestDetails,
 } from "../controllers/guest.controller.js";
 
@@ -23,4 +24,7 @@ guestRouter.route("/:id").delete(deleteGuest);
 
 //edit guest
 guestRouter.route("/:id").put(updateGuestDetails);
+
+//searching guest
+guestRouter.route("/search/:q").get(searchGuest);
 export default guestRouter;

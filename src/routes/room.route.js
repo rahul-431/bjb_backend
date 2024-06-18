@@ -37,7 +37,7 @@ roomRouter.route("/").post(
 );
 
 //getAllRoom
-roomRouter.route("/").get(getAllRoom);
+roomRouter.route("/:isBooking").get(getAllRoom);
 
 //getSingleRoom
 roomRouter.route("/:id").get(getSingleRoom);
