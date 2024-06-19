@@ -25,6 +25,7 @@ const bookingSchema = new Schema(
       ref: "Guest",
       required: true,
     },
+    numNights: Number,
     maleNumber: { type: Number, default: 0 },
     femaleNumber: { type: Number, default: 0 },
     totalGuest: Number,
@@ -38,6 +39,7 @@ const bookingSchema = new Schema(
       type: Number,
       required: true,
     },
+    dueAmount: Number,
     extraCharge: { type: Number, default: 0 },
     otherCharge: { type: Number, default: 0 },
     isPaid: {

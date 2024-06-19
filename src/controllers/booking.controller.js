@@ -7,23 +7,32 @@ import { Room } from "../models/room.model.js";
 
 //add new booking
 const addBooking = asyncHandler(async (req, res) => {
+  console.log(req.body);
   const {
     checkInDate,
     checkoutDate,
     vehicleNumber,
     roomNumber,
     guestId,
+    numNights,
     maleNumber,
     femaleNumber,
+    advanceAmount,
     relation,
-    isPaid,
     roomCharge,
     extraCharge,
     observation,
   } = req.body;
 
   if (
-    [checkInDate, checkoutDate, roomNumber, guestId, isPaid, roomCharge].some(
+    [
+      checkInDate,
+      checkoutDate,
+      roomNumber,
+      guestId,
+      advanceAmount,
+      roomCharge,
+    ].some(
       (item) =>
         item === null ||
         item === undefined ||
@@ -34,19 +43,30 @@ const addBooking = asyncHandler(async (req, res) => {
   }
   const totalGuest = maleNumber + femaleNumber;
   const adminId = new mongoose.Types.ObjectId("663f6aea6f2813ddaca08669");
+  const totalRoomCharge = roomCharge * numNights;
+  const ExtraCharge = extraCharge ? extraCharge : 0;
+  const isPaid =
+    Number(advanceAmount) >= Number(totalRoomCharge + ExtraCharge)
+      ? true
+      : false;
+  console.log(totalRoomCharge, isPaid, ExtraCharge);
+  const dueAmount = Number(totalRoomCharge + ExtraCharge - advanceAmount);
+  console.log("due amount:", dueAmount);
   const newBooking = await Booking.create({
     checkInDate,
     checkoutDate,
     vehicleNumber,
     roomNumber,
     guestId,
+    numNights,
     maleNumber,
     femaleNumber,
     totalGuest,
     relation,
     isPaid,
-    roomCharge,
-    extraCharge,
+    roomCharge: totalRoomCharge,
+    dueAmount,
+    extraCharge: ExtraCharge,
     observation,
     addedBy: adminId,
   });
@@ -127,10 +147,12 @@ const getAllBooking = asyncHandler(async (req, res) => {
         _id: 1,
         checkInDate: 1,
         checkoutDate: 1,
+        numNights: 1,
         maleNumber: 1,
         femaleNumber: 1,
         status: 1,
         roomCharge: 1,
+        dueAmount: 1,
         extraCharge: 1,
         isPaid: 1,
         otherPaid: 1,
@@ -251,10 +273,12 @@ const getSingleBooking = asyncHandler(async (req, res) => {
         maleNumber: 1,
         femaleNumber: 1,
         status: 1,
+        numNights: 1,
         roomCharge: 1,
         extraCharge: 1,
         otherCharge: 1,
         isPaid: 1,
+        dueAmount: 1,
         otherPaid: 1,
         createdAt: 1,
         updatedAt: 1,
@@ -279,23 +303,20 @@ const getSingleBooking = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(booking[0], "Booking data retrieved successfully"));
 });
-const updateExtraCharge = asyncHandler(async (req, res) => {
+const updateBooking = asyncHandler(async (req, res) => {
   if (!req.params.id) {
     throw new ApiError(400, "Id is not provided");
   }
-  const { otherCharge } = req.body;
+  const obj = req.body;
 
-  if (!otherCharge) {
-    throw new ApiError(400, "Other price is empty");
-  }
+  // if (!otherCharge) {
+  //   throw new ApiError(400, "Other price is empty");
+  // }
   const id = new mongoose.Types.ObjectId(req.params.id);
   // const totalExtraCharge = Number(otherCharge) + Number(previousCharge);
   const updatedPrice = await Booking.findByIdAndUpdate(id, {
-    $set: {
-      otherCharge: otherCharge,
-      otherPaid: false,
-    },
-  }).select("extraCharge");
+    $set: obj,
+  });
   if (!updatedPrice) {
     throw new ApiError(500, "Failed to update extra charge");
   }
@@ -303,35 +324,12 @@ const updateExtraCharge = asyncHandler(async (req, res) => {
     new ApiResponse(updatedPrice, "Successfully updated extra charge")
   );
 });
-const confirmPayment = asyncHandler(async (req, res) => {
+
+const checkout = asyncHandler(async (req, res) => {
   if (!req.params.id) {
     throw new ApiError(400, "Id is not provided");
   }
-  const id = new mongoose.Types.ObjectId(req.params.id);
-  const { otherCharge, extraCharge } = await Booking.findById(id).select(
-    "otherCharge extraCharge"
-  );
-  const newExtraCharge = otherCharge + extraCharge;
-  const newOtherCharge = 0;
-  const updatedPrice = await Booking.findByIdAndUpdate(id, {
-    $set: {
-      extraCharge: newExtraCharge,
-      otherCharge: newOtherCharge,
-      otherPaid: true,
-      isPaid: true,
-    },
-  });
-  if (!updatedPrice) {
-    throw new ApiError(500, "Failed to confirm payment");
-  }
-  return res.json(
-    new ApiResponse(updatedPrice, "Successfully confirmed payment")
-  );
-});
-const updateBooking = asyncHandler(async (req, res) => {
-  if (!req.params.id) {
-    throw new ApiError(400, "Id is not provided");
-  }
+  console.log(req.body);
   const { _roomId, ...obj } = req.body;
   const id = new mongoose.Types.ObjectId(req.params.id);
   const updatedBooking = await Booking.findByIdAndUpdate(
@@ -345,7 +343,7 @@ const updateBooking = asyncHandler(async (req, res) => {
     roomStatus: "Not Booked",
     cleanStatus: "Clean",
   });
-
+  console.log(updatedBooking);
   if (!updatedBooking) {
     throw new ApiError(500, "Failed to update booking");
   }
@@ -358,7 +356,7 @@ export {
   getAllBooking,
   deleteBooking,
   getSingleBooking,
-  updateExtraCharge,
-  confirmPayment,
   updateBooking,
+  confirmPayment,
+  checkout,
 };
