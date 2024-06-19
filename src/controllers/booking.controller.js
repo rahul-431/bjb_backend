@@ -140,6 +140,7 @@ const getAllBooking = asyncHandler(async (req, res) => {
         "guest.phoneNumber": 1,
         "guest.fullName": 1,
         "room.roomNumber": 1,
+        "room._id": 1,
       },
     },
     {
@@ -267,6 +268,7 @@ const getSingleBooking = asyncHandler(async (req, res) => {
         "guest.address": 1,
         "guest._id": 1,
         "room.roomNumber": 1,
+        "room._id": 1,
       },
     },
   ]);
@@ -330,7 +332,7 @@ const updateBooking = asyncHandler(async (req, res) => {
   if (!req.params.id) {
     throw new ApiError(400, "Id is not provided");
   }
-  const obj = req.body;
+  const { _roomId, ...obj } = req.body;
   const id = new mongoose.Types.ObjectId(req.params.id);
   const updatedBooking = await Booking.findByIdAndUpdate(
     id,
@@ -339,6 +341,11 @@ const updateBooking = asyncHandler(async (req, res) => {
     },
     { new: true }
   );
+  await Room.findByIdAndUpdate(_roomId, {
+    roomStatus: "Not Booked",
+    cleanStatus: "Clean",
+  });
+
   if (!updatedBooking) {
     throw new ApiError(500, "Failed to update booking");
   }
