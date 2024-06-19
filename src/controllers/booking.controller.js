@@ -132,6 +132,8 @@ const getAllBooking = asyncHandler(async (req, res) => {
         status: 1,
         roomCharge: 1,
         extraCharge: 1,
+        isPaid: 1,
+        otherPaid: 1,
         createdAt: 1,
         updatedAt: 1,
         "user.fullName": 1,
@@ -299,10 +301,57 @@ const updateExtraCharge = asyncHandler(async (req, res) => {
     new ApiResponse(updatedPrice, "Successfully updated extra charge")
   );
 });
+const confirmPayment = asyncHandler(async (req, res) => {
+  if (!req.params.id) {
+    throw new ApiError(400, "Id is not provided");
+  }
+  const id = new mongoose.Types.ObjectId(req.params.id);
+  const { otherCharge, extraCharge } = await Booking.findById(id).select(
+    "otherCharge extraCharge"
+  );
+  const newExtraCharge = otherCharge + extraCharge;
+  const newOtherCharge = 0;
+  const updatedPrice = await Booking.findByIdAndUpdate(id, {
+    $set: {
+      extraCharge: newExtraCharge,
+      otherCharge: newOtherCharge,
+      otherPaid: true,
+      isPaid: true,
+    },
+  });
+  if (!updatedPrice) {
+    throw new ApiError(500, "Failed to confirm payment");
+  }
+  return res.json(
+    new ApiResponse(updatedPrice, "Successfully confirmed payment")
+  );
+});
+const updateBooking = asyncHandler(async (req, res) => {
+  if (!req.params.id) {
+    throw new ApiError(400, "Id is not provided");
+  }
+  const obj = req.body;
+  const id = new mongoose.Types.ObjectId(req.params.id);
+  const updatedBooking = await Booking.findByIdAndUpdate(
+    id,
+    {
+      $set: obj,
+    },
+    { new: true }
+  );
+  if (!updatedBooking) {
+    throw new ApiError(500, "Failed to update booking");
+  }
+  return res.json(
+    new ApiResponse(updatedBooking, "Successfully updated booking")
+  );
+});
 export {
   addBooking,
   getAllBooking,
   deleteBooking,
   getSingleBooking,
   updateExtraCharge,
+  confirmPayment,
+  updateBooking,
 };
