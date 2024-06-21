@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Room } from "../models/room.model.js";
+import _ from "lodash";
 
 //add new booking
 const addBooking = asyncHandler(async (req, res) => {
@@ -46,11 +47,12 @@ const addBooking = asyncHandler(async (req, res) => {
   const totalRoomCharge = roomCharge * numNights;
   const ExtraCharge = extraCharge ? extraCharge : 0;
   const isPaid =
-    Number(advanceAmount) >= Number(totalRoomCharge + ExtraCharge)
+    Number(advanceAmount) >= Number(totalRoomCharge) + Number(ExtraCharge)
       ? true
       : false;
   console.log(totalRoomCharge, isPaid, ExtraCharge);
-  const dueAmount = Number(totalRoomCharge + ExtraCharge - advanceAmount);
+  const dueAmount =
+    Number(totalRoomCharge) + Number(ExtraCharge) - Number(advanceAmount);
   console.log("due amount:", dueAmount);
   const newBooking = await Booking.create({
     checkInDate,
@@ -87,7 +89,7 @@ const addBooking = asyncHandler(async (req, res) => {
 
 //getting list of all bookings
 const getAllBooking = asyncHandler(async (req, res) => {
-  const { page = 1, filter, search = "" } = req.query;
+  const { page = 1, filter, search = "", guestId = "" } = req.query;
   const limit = 10;
   const skip = (page - 1) * limit;
   let initialQuery = {};
@@ -95,7 +97,11 @@ const getAllBooking = asyncHandler(async (req, res) => {
   if (filter !== "all") {
     initialQuery.status = filter;
   }
-
+  console.log(guestId);
+  if (guestId && guestId !== "") {
+    const GuestId = new mongoose.Types.ObjectId(guestId);
+    initialQuery.guestId = GuestId;
+  }
   pipeline = [
     {
       $match: initialQuery,
@@ -192,6 +198,7 @@ const getAllBooking = asyncHandler(async (req, res) => {
     },
   ]);
   const bookings = await Booking.aggregate(pipeline);
+  console.log(bookings);
   const bookingData = {
     bookings,
     count,
@@ -314,9 +321,13 @@ const updateBooking = asyncHandler(async (req, res) => {
   // }
   const id = new mongoose.Types.ObjectId(req.params.id);
   // const totalExtraCharge = Number(otherCharge) + Number(previousCharge);
-  const updatedPrice = await Booking.findByIdAndUpdate(id, {
-    $set: obj,
-  });
+  const updatedPrice = await Booking.findByIdAndUpdate(
+    id,
+    {
+      $set: obj,
+    },
+    { new: true }
+  );
   if (!updatedPrice) {
     throw new ApiError(500, "Failed to update extra charge");
   }
@@ -357,6 +368,5 @@ export {
   deleteBooking,
   getSingleBooking,
   updateBooking,
-  confirmPayment,
   checkout,
 };

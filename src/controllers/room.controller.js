@@ -65,6 +65,13 @@ const addRoom = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "All fields are required");
   }
+  const existedRoom = await Room.findOne({ roomNumber });
+  if (existedRoom) {
+    throw new ApiError(
+      409,
+      `Room with ${roomNumber} already exist, please try new one`
+    );
+  }
 
   //checking for roomImage
   let roomImageLocalPath = "";
