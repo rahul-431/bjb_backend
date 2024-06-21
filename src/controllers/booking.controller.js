@@ -98,7 +98,6 @@ const getAllBooking = asyncHandler(async (req, res) => {
   if (filter !== "all") {
     initialQuery.status = filter;
   }
-  console.log(guestId);
   if (guestId && guestId !== "") {
     const GuestId = new mongoose.Types.ObjectId(guestId);
     initialQuery.guestId = GuestId;
@@ -199,7 +198,6 @@ const getAllBooking = asyncHandler(async (req, res) => {
     },
   ]);
   const bookings = await Booking.aggregate(pipeline);
-  console.log(bookings);
   const bookingData = {
     bookings,
     count,
@@ -383,17 +381,19 @@ const getBookingAterDate = asyncHandler(async (req, res) => {
   );
 });
 const getTodayActivity = asyncHandler(async (req, res) => {
-  const date = new Date();
-  const checkoutDateWithTime = setMinutes(setHours(date, 12), 5);
+  const date = new Date().toISOString().split("T")[0];
   const bookings = await Booking.aggregate([
     {
       $match: {
-        checkoutDate: checkoutDateWithTime,
+        $or: [
+          { checkoutDate: { $regex: date, $options: "i" } },
+          { createdAt: { $regex: date, $options: "i" } },
+        ],
       },
     },
     {
       $match: {
-        status: "unconfirmed" || "checked-in",
+        status: { $in: ["unconfirmed", "checked-in"] },
       },
     },
     {
@@ -420,6 +420,7 @@ const getTodayActivity = asyncHandler(async (req, res) => {
       },
     },
   ]);
+
   if (!bookings) {
     throw new ApiError(404, "No data found or getting error");
   }
