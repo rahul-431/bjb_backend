@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Room } from "../models/room.model.js";
 import _ from "lodash";
+import { addDays, setHours, setMinutes } from "date-fns";
 
 //add new booking
 const addBooking = asyncHandler(async (req, res) => {
@@ -279,6 +280,7 @@ const getSingleBooking = asyncHandler(async (req, res) => {
         checkoutDate: 1,
         maleNumber: 1,
         femaleNumber: 1,
+        totalGuest: 1,
         status: 1,
         numNights: 1,
         roomCharge: 1,
@@ -362,6 +364,67 @@ const checkout = asyncHandler(async (req, res) => {
     new ApiResponse(updatedBooking, "Successfully updated booking")
   );
 });
+const getBookingAterDate = asyncHandler(async (req, res) => {
+  const { startDate = "all" } = req.query;
+  let initialQuery = {};
+  if (startDate !== "all") {
+    initialQuery = {
+      createdAt: { $gte: startDate },
+    };
+  }
+  const bookings = await Booking.find(initialQuery).select(
+    "numNights createdAt otherCharge roomCharge extraCharge status"
+  );
+  if (!bookings) {
+    throw new ApiError(500, "Failed to fetch the booking data");
+  }
+  return res.json(
+    new ApiResponse(bookings, "Booking data fetched successfully")
+  );
+});
+const getTodayActivity = asyncHandler(async (req, res) => {
+  const date = new Date();
+  const checkoutDateWithTime = setMinutes(setHours(date, 12), 5);
+  const bookings = await Booking.aggregate([
+    {
+      $match: {
+        checkoutDate: checkoutDateWithTime,
+      },
+    },
+    {
+      $match: {
+        status: "unconfirmed" || "checked-in",
+      },
+    },
+    {
+      $lookup: {
+        from: "guests",
+        localField: "guestId",
+        foreignField: "_id",
+        as: "guest",
+      },
+    },
+    {
+      $addFields: {
+        guest: {
+          $first: "$guest",
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        "guest.fullName": 1,
+        status: 1,
+        numNights: 1,
+      },
+    },
+  ]);
+  if (!bookings) {
+    throw new ApiError(404, "No data found or getting error");
+  }
+  return res.json(new ApiResponse(bookings, "successfully get the data"));
+});
 export {
   addBooking,
   getAllBooking,
@@ -369,4 +432,6 @@ export {
   getSingleBooking,
   updateBooking,
   checkout,
+  getBookingAterDate,
+  getTodayActivity,
 };
