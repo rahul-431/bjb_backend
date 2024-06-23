@@ -4,6 +4,7 @@ import {
   changePassword,
   deleteUser,
   getAllUsers,
+  getCurrentUser,
   handleForgetPassword,
   login,
   logout,
@@ -22,6 +23,7 @@ userRouter.route("/").post(
       maxCount: 1,
     },
   ]),
+  verifyJwt,
   registerUser
 );
 
@@ -31,10 +33,11 @@ userRouter.route("/login").post(login);
 //secured routes
 
 //get list of all users
-userRouter.route("/").get(getAllUsers);
+userRouter.route("/").get(verifyJwt, getAllUsers);
+userRouter.route("/getCurrent").get(verifyJwt, getCurrentUser);
 
 //delete user
-userRouter.route("/:id").delete(deleteUser);
+userRouter.route("/:id").delete(verifyJwt, deleteUser);
 
 //update user data fullName and email
 userRouter.route("/").put(verifyJwt, updateUser);
@@ -49,5 +52,5 @@ userRouter.route("/changePassword").post(verifyJwt, changePassword);
 userRouter.route("/forgetPassword").post(handleForgetPassword);
 
 //reset password
-userRouter.route("/reset").post(resetPassword);
+userRouter.route("/reset").post(verifyJwt, resetPassword);
 export default userRouter;

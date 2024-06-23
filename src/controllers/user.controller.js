@@ -207,9 +207,20 @@ const login = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(loggedInUser, "Logged in successfully"));
+    .json(
+      new ApiResponse(
+        { user: loggedInUser, token: { accessToken, refreshToken } },
+        "Logged in successfully"
+      )
+    );
 });
-
+const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req?.user?._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+  return res.json(new ApiResponse(user, "Here is the user data"));
+});
 //logout user
 const logout = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
@@ -319,4 +330,5 @@ export {
   changePassword,
   handleForgetPassword,
   resetPassword,
+  getCurrentUser,
 };

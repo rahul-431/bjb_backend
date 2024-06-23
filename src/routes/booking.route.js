@@ -9,13 +9,14 @@ import {
   getTodayActivity,
   updateBooking,
 } from "../controllers/booking.controller.js";
+import { verifyJwt } from "../middlewares/auth.middleware.js";
 const bookingRouter = Router();
-bookingRouter.route("/").post(addBooking);
-bookingRouter.route("/").get(getAllBooking);
-bookingRouter.route("/todayActivity").get(getTodayActivity);
-bookingRouter.route("/afterDate").get(getBookingAterDate);
-bookingRouter.route("/:id").get(getSingleBooking);
-bookingRouter.route("/:id").delete(deleteBooking);
-bookingRouter.route("/:id").put(updateBooking);
-bookingRouter.route("/checkout/:id").put(checkout);
+bookingRouter.route("/").post(verifyJwt, addBooking);
+bookingRouter.route("/").get(verifyJwt, getAllBooking);
+bookingRouter.route("/todayActivity").get(verifyJwt, getTodayActivity);
+bookingRouter.route("/afterDate").get(verifyJwt, getBookingAterDate);
+bookingRouter.route("/:id").get(verifyJwt, getSingleBooking);
+bookingRouter.route("/:id").delete(verifyJwt, deleteBooking);
+bookingRouter.route("/:id").put(verifyJwt, updateBooking);
+bookingRouter.route("/checkout/:id").put(verifyJwt, checkout);
 export default bookingRouter;
