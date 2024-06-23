@@ -9,7 +9,6 @@ import { addDays, setHours, setMinutes } from "date-fns";
 
 //add new booking
 const addBooking = asyncHandler(async (req, res) => {
-  console.log(req.body);
   const {
     checkInDate,
     checkoutDate,
@@ -44,7 +43,7 @@ const addBooking = asyncHandler(async (req, res) => {
     throw new ApiError("400", "all fields are required");
   }
   const totalGuest = maleNumber + femaleNumber;
-  const adminId = new mongoose.Types.ObjectId("663f6aea6f2813ddaca08669");
+  const adminId = req?.user?._id;
   const totalRoomCharge = roomCharge * numNights;
   const ExtraCharge = extraCharge ? extraCharge : 0;
   const isPaid =

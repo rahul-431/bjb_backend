@@ -30,7 +30,7 @@ const addGuest = asyncHandler(async (req, res) => {
   }
 
   //checking if the current phone number already exist or not
-  const adminId = new mongoose.Types.ObjectId("663f6aea6f2813ddaca08669");
+  const adminId = req?.user?._id;
   const existedGuest = await Guest.findOne({ phoneNumber });
   if (existedGuest) {
     throw new ApiError(400, "guest with this phone number already exist");

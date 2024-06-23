@@ -99,7 +99,7 @@ const addRoom = asyncHandler(async (req, res) => {
   // }
 
   //just for now admin id add manually
-  const adminId = new mongoose.Types.ObjectId("663f6aea6f2813ddaca08669");
+  const adminId = req?.user?._id;
   const roomTypeId = new mongoose.Types.ObjectId(roomType);
   //room object
   const room = await Room.create({
